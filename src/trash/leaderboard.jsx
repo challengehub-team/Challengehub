@@ -1,0 +1,203 @@
+import { useEffect, useState, useRef } from "react";
+import axios from "axios";
+
+import { FaTrophy, FaCrown, FaMedal } from "react-icons/fa";
+import { FiUsers, FiLoader } from "react-icons/fi";
+
+export default function Leaderboard() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const currentUserId = localStorage.getItem("userId");
+  const prevIds = useRef(new Set());
+
+  const fetchScores = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/api/exam/leaderboard");
+      const rawData = res.data;
+
+      console.log("Raw leaderboard data:", rawData); // Debugging log
+
+      // FIX: Dedup users by 'uid' so the same user updates instead of listing twice
+      const uniqueUsersMap = {};
+      rawData.forEach((item) => {
+        // If user doesn't exist yet, or this new record has a higher percentage score
+        if (!uniqueUsersMap[item.uid] || item.percent > uniqueUsersMap[item.uid].percent) {
+          uniqueUsersMap[item.uid] = item;
+        }
+      });
+
+      // Convert map back to an array and sort descending by percent, then ascending by time
+      const cleanedData = Object.values(uniqueUsersMap).sort((a, b) => {
+        if (b.percent !== a.percent) return b.percent - a.percent;
+        return a.timeUsed - b.timeUsed;
+      });
+
+      console.log("Cleaned leaderboard data:", cleanedData); // Debugging log
+
+      // Re-assign explicit ranking order based on the cleaned sort order
+      const finalRankedData = cleanedData.map((user, idx) => ({
+        ...user,
+        rank: idx + 1
+      }));
+
+      prevIds.current = new Set(finalRankedData.map((i) => i.id));
+      setData(finalRankedData);
+
+      console.log("Final ranked leaderboard data:", finalRankedData); // Debugging log
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchScores();
+    const interval = setInterval(fetchScores, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const topThree = data.slice(0, 3);
+  const rest = data.slice(3);
+
+  const getPodiumStyle = (index) => {
+    if (index === 0) return "bg-gradient-to-b from-yellow-300 to-yellow-500 text-white"; // GOLD
+    if (index === 1) return "bg-gradient-to-b from-gray-200 to-gray-400 text-gray-800"; // SILVER
+    return "bg-gradient-to-b from-orange-300 to-orange-500 text-white"; // BRONZE
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br mt-12 from-green-50 via-white to-emerald-50 p-4 md:p-6 pt-24">
+      {/* HEADER */}
+      <div className="max-w-6xl mx-auto mb-8">
+        {/* FIX: Handled mobile shifting with flex-col sm:flex-row */}
+        <div className="bg-white border border-green-100 rounded-3xl shadow p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-green-700 flex items-center gap-3">
+              <FaTrophy />
+              Leaderboard
+            </h1>
+            <p className="text-gray-500 text-sm">Top performing students</p>
+          </div>
+
+          <div className="bg-green-100 text-green-700 px-5 py-3 rounded-2xl font-bold w-full sm:w-auto text-center">
+            {data.length} Students
+          </div>
+        </div>
+      </div>
+
+      {/* LOADING */}
+      {loading ? (
+        <div className="flex justify-center py-32 text-green-600">
+          <FiLoader className="text-4xl animate-spin" />
+        </div>
+      ) : (
+        <div className="max-w-6xl mx-auto">
+          {/* 🏆 PODIUM TOP 3 */}
+          {topThree.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              {topThree.map((u, i) => {
+                const isUser = u.uid === currentUserId;
+
+                return (
+                  <div
+                    key={u.id || u.uid}
+                    className={`relative p-6 rounded-3xl shadow-lg border text-center transition-all hover:scale-105 ${getPodiumStyle(i)}`}
+                  >
+                    {/* RANK ICON */}
+                    <div className="flex justify-center mb-3">
+                      {i === 0 && <FaCrown className="text-4xl" />}
+                      {i === 1 && <FaMedal className="text-4xl" />}
+                      {i === 2 && <FaMedal className="text-4xl" />}
+                    </div>
+
+                    {/* NAME */}
+                    <h2 className="text-xl font-bold truncate px-2">{u.name}</h2>
+                    <p className="mt-1 text-sm font-semibold">{u.percent}%</p>
+                    <p className="text-xs opacity-90 mt-2">Time: {u.timeUsed}s</p>
+
+                    {/* YOU BADGE */}
+                    {isUser && (
+                      <span className="absolute top-3 right-3 bg-black text-white text-xs px-2 py-1 rounded-full font-bold">
+                        YOU
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 📊 TABLE */}
+          <div className="bg-white border border-green-100 rounded-3xl shadow overflow-hidden">
+            <div className="bg-green-600 text-white p-4 font-bold flex items-center gap-2">
+              <FiUsers />
+              Full Rankings
+            </div>
+
+            {/* FIX: Handled small mobile screens using overflow-x-auto container */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[500px]">
+                <thead className="bg-green-50 text-green-700">
+                  <tr>
+                    <th className="p-4 text-left w-16">Rank</th>
+                    <th className="p-4 text-left">Name</th>
+                    <th className="p-4 text-left">Score</th>
+                    <th className="p-4 text-left">%</th>
+                    <th className="p-4 text-left">Time</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {rest.map((u) => {
+                    const isUser = u.uid === currentUserId;
+
+                    return (
+                      <tr
+                        key={u.id || u.uid}
+                        className={`border-b transition ${
+                          isUser ? "bg-green-100 font-bold" : "hover:bg-green-50"
+                        }`}
+                      >
+                        <td className="p-4 text-gray-600 font-medium">#{u.rank}</td>
+
+                        <td className="p-4 flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
+                              isUser ? "bg-green-600" : "bg-gray-400"
+                            }`}
+                          >
+                            {u.name?.charAt(0).toUpperCase()}
+                          </div>
+
+                          <span className={`${isUser ? "text-green-700" : "text-gray-800"} truncate max-w-[150px] sm:max-w-xs`}>
+                            {u.name}
+                            {isUser && (
+                              <span className="ml-2 text-[10px] bg-green-600 text-white px-2 py-0.5 rounded-full inline-block align-middle font-bold">
+                                YOU
+                              </span>
+                            )}
+                          </span>
+                        </td>
+
+                        <td className="p-4 font-bold text-green-700">
+                          {u.score}/{u.total}
+                        </td>
+
+                        <td className="p-4 font-medium">{u.percent}%</td>
+
+                        <td className="p-4 text-gray-500">{u.timeUsed}s</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
