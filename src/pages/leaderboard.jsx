@@ -4,22 +4,51 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { FaTrophy, FaCrown, FaMedal } from "react-icons/fa";
-import { FiUsers, FiLoader } from "react-icons/fi"; // 🌟 Fixed typo package here
+import { FiUsers, FiLoader } from "react-icons/fi";
 
 const BACKEND_BASE_URL = "http://localhost:3000";
 
+const PROFILE_URL = `${BACKEND_BASE_URL}/api/profile`;
+
 export default function Leaderboard() {
   const [data, setData] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const currentUserEmail = localStorage.getItem("email");
+  const token = localStorage.getItem("token");
 
   const previousDataMapRef = useRef(new Map());
   const isInitialLoadRef = useRef(true);
 
+  // =========================
+  // GET CURRENT USER PROFILE
+  // =========================
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(PROFILE_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setProfile(res.data.user);
+
+      console.log("Leaderboard profile:", res.data.user);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    }
+  };
+
+  // =========================
+  // GET LEADERBOARD
+  // =========================
   const fetchLeaderboard = async () => {
     try {
-      const res = await axios.get(`${BACKEND_BASE_URL}/api/exam/leaderboard`);
+      const res = await axios.get(
+        `${BACKEND_BASE_URL}/api/exam/leaderboard`
+      );
+
       const rawData = res.data;
 
       const ranked = rawData.map((u, i) => ({
@@ -27,14 +56,15 @@ export default function Leaderboard() {
         rank: i + 1,
       }));
 
-      // 📢 Real-time smart notifications loop tracker
+      // =========================
+      // REAL-TIME NOTIFICATIONS
+      // =========================
       if (!isInitialLoadRef.current) {
         ranked.forEach((student) => {
           const prev = previousDataMapRef.current.get(student.email);
           const name = student.name || "A student";
 
           if (!prev) {
-            // First time submission notification rule trigger
             toast.info(`🎉 ${name} joined the leaderboard!`, {
               theme: "light",
               autoClose: 3000,
@@ -43,17 +73,23 @@ export default function Leaderboard() {
             prev.percent !== student.percent ||
             prev.timeUsed !== student.timeUsed
           ) {
-            // Overwrite submission notification rule trigger
-            toast.success(`⚡ ${name} updated their score: ${prev.percent}% → ${student.percent}%`, {
-              theme: "light",
-              autoClose: 3000,
-            });
+            toast.success(
+              `⚡ ${name} updated their score: ${prev.percent}% → ${student.percent}%`,
+              {
+                theme: "light",
+                autoClose: 3000,
+              }
+            );
           }
         });
       }
 
       const map = new Map();
-      ranked.forEach((u) => map.set(u.email, u));
+
+      ranked.forEach((u) => {
+        map.set(u.email, u);
+      });
+
       previousDataMapRef.current = map;
       isInitialLoadRef.current = false;
 
@@ -65,18 +101,107 @@ export default function Leaderboard() {
     }
   };
 
+  // =========================
+  // INITIAL LOAD
+  // =========================
   useEffect(() => {
+    fetchProfile();
     fetchLeaderboard();
+
     const interval = setInterval(fetchLeaderboard, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
   const topThree = data.slice(0, 3);
 
+  // =========================
+  // PROFILE IMAGE
+  // =========================
+  const getCurrentUserImage = () => {
+    if (!profile) return null;
+
+    return (
+      profile.profilePic ||
+      profile.photoURL ||
+      profile.profileImage ||
+      profile.avatar ||
+      null
+    );
+  };
+
+  const currentUserImage = getCurrentUserImage();
+
+  // =========================
+  // USER INITIAL
+  // =========================
+  const getInitial = (user) => {
+    return (
+      user?.name?.charAt(0)?.toUpperCase() ||
+      user?.surname?.charAt(0)?.toUpperCase() ||
+      profile?.name?.charAt(0)?.toUpperCase() ||
+      profile?.surname?.charAt(0)?.toUpperCase() ||
+      "U"
+    );
+  };
+
+  // =========================
+  // PODIUM COLORS
+  // =========================
   const podiumColor = (i) => {
     if (i === 0) return "border-green-500 bg-green-50";
     if (i === 1) return "border-green-300 bg-white";
     return "border-green-200 bg-green-50/40";
+  };
+
+  // =========================
+  // PROFILE AVATAR
+  // =========================
+  const ProfileAvatar = ({
+    user,
+    large = false,
+  }) => {
+    const isCurrentUser = user?.email === currentUserEmail;
+
+    /*
+      For YOU:
+      Use the image coming from /api/profile.
+
+      For other students:
+      If your leaderboard API eventually sends profilePic,
+      it will also be used automatically.
+    */
+    const image =
+      isCurrentUser
+        ? currentUserImage
+        : user?.profilePic ||
+          user?.photoURL ||
+          user?.profileImage ||
+          user?.avatar ||
+          null;
+
+    return (
+      <div
+        className={`${
+          large ? "w-16 h-16 text-xl" : "w-8 h-8 text-xs"
+        } rounded-full bg-green-600 text-white flex items-center justify-center overflow-hidden flex-shrink-0 font-semibold ${
+          large ? "border-4 border-white shadow-sm" : ""
+        }`}
+      >
+        {image ? (
+          <img
+            src={image}
+            alt={user?.name || "Student"}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          getInitial(user)
+        )}
+      </div>
+    );
   };
 
   return (
@@ -92,6 +217,7 @@ export default function Leaderboard() {
                 <FaTrophy />
                 Leaderboard
               </h1>
+
               <p className="text-gray-500 text-sm mt-1">
                 Performance rankings across all students
               </p>
@@ -113,6 +239,7 @@ export default function Leaderboard() {
         </div>
       ) : (
         <div className="max-w-6xl mx-auto">
+
           {/* PODIUM */}
           {topThree.length > 0 && (
             <div className="grid md:grid-cols-3 gap-5 mb-10">
@@ -126,24 +253,42 @@ export default function Leaderboard() {
                       i
                     )} ${isUser ? "ring-2 ring-green-400" : ""}`}
                   >
+                    {/* MEDAL */}
                     <div className="flex justify-center mb-3">
-                      {i === 0 && <FaCrown className="text-green-600 text-2xl" />}
-                      {i === 1 && <FaMedal className="text-green-500 text-2xl" />}
-                      {i === 2 && <FaMedal className="text-green-400 text-2xl" />}
+                      {i === 0 && (
+                        <FaCrown className="text-green-600 text-2xl" />
+                      )}
+
+                      {i === 1 && (
+                        <FaMedal className="text-green-500 text-2xl" />
+                      )}
+
+                      {i === 2 && (
+                        <FaMedal className="text-green-400 text-2xl" />
+                      )}
                     </div>
 
+                    {/* PROFILE IMAGE */}
+                    <div className="flex justify-center mb-3">
+                      <ProfileAvatar user={u} large />
+                    </div>
+
+                    {/* NAME */}
                     <h2 className="font-semibold text-gray-800 truncate">
                       {u.name}
                     </h2>
 
+                    {/* SCORE */}
                     <p className="text-green-700 font-bold mt-1">
                       {u.percent}%
                     </p>
 
+                    {/* TIME */}
                     <p className="text-xs text-gray-500 mt-1">
                       Time: {u.timeUsed}s
                     </p>
 
+                    {/* YOU */}
                     {isUser && (
                       <span className="absolute top-3 right-3 text-xs bg-green-600 text-white px-2 py-1 rounded-full">
                         YOU
@@ -181,18 +326,24 @@ export default function Leaderboard() {
                     return (
                       <tr
                         key={u.email}
-                        className={`border-t transition ${isUser
-                          ? "bg-green-50 font-semibold"
-                          : "hover:bg-green-50/40"
-                          }`}
+                        className={`border-t transition ${
+                          isUser
+                            ? "bg-green-50 font-semibold"
+                            : "hover:bg-green-50/40"
+                        }`}
                       >
-                        <td className="p-4 text-gray-600">#{u.rank}</td>
+                        {/* RANK */}
+                        <td className="p-4 text-gray-600">
+                          #{u.rank}
+                        </td>
 
+                        {/* NAME + IMAGE */}
                         <td className="p-4 flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs">
-                            {u.name?.charAt(0)}
-                          </div>
-                          <span className="truncate">{u.name}</span>
+                          <ProfileAvatar user={u} />
+
+                          <span className="truncate">
+                            {u.name}
+                          </span>
 
                           {isUser && (
                             <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full ml-2">
@@ -201,12 +352,17 @@ export default function Leaderboard() {
                           )}
                         </td>
 
+                        {/* SCORE */}
                         <td className="p-4 text-green-700 font-semibold">
                           {u.score}/{u.total}
                         </td>
 
-                        <td className="p-4">{u.percent}%</td>
+                        {/* PERCENT */}
+                        <td className="p-4">
+                          {u.percent}%
+                        </td>
 
+                        {/* TIME */}
                         <td className="p-4 text-gray-500">
                           {u.timeUsed}s
                         </td>
@@ -217,6 +373,7 @@ export default function Leaderboard() {
               </table>
             </div>
           </div>
+
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ const LogoutIcon = () => {
     try {
     const userId = localStorage.getItem("userId");
       await axios.post(
-        "http://localhost:5000/api/auth/signout",
+        "http://localhost:3000/api/auth/signout",
         { "uid": userId}, // body (empty if you don’t need to send anything)
       /*   {
           withCredentials: true, // important if using cookies/session

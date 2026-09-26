@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const getToken = async () => {
     return localStorage.getItem("token");
 
-    console.log(localStorage.getItem("token"))
+   /*  console.log(localStorage.getItem("token")) */
   };
 
   const fetchUser = async () => {
@@ -87,7 +87,7 @@ export default function ProfilePage() {
       const token = await getToken();
 
       // Send to your backend
-      const res = await fetch("http://localhost:5000/api/auth/update", {
+      const res = await fetch("http://localhost:3000/api/auth/update", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +154,7 @@ export default function ProfilePage() {
       else if (editingField === "state") payload.state = draft;
       else if (editingField === "category") payload.category = draft;
 
-      const res = await fetch("http://localhost:5000/api/auth/update", {
+      const res = await fetch("http://localhost:3000/api/auth/update", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -209,7 +209,7 @@ export default function ProfilePage() {
     try {
       const token = await getToken();
 
-      const res = await fetch("http://localhost:5000/api/auth/delete", {
+      const res = await fetch("http://localhost:3000/api/auth/delete", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -342,7 +342,7 @@ export default function ProfilePage() {
         {/* FIELDS */}
         <div className="space-y-4">
           <Field label="Surname" field="surname" />
-          <Field label="Other Names" field="othernames" />
+          <Field label="Other Names" field="otherNames" />
           <Field label="Email Address" field="email" />
           <Field label="LGA" field="lga" />
           <Field label="Phone" field="phone" />

@@ -59,6 +59,7 @@ const ContactPage = lazy(() => import("./pages/contact"));
 const AdministrationPage = lazy(() => import("./pages/administrations"));
 const LearnMorePage = lazy(() => import("./pages/learnmore"));
 const CompetitionNotifications = lazy(() => import("./pages/notifications"));
+const ComminutyHub = lazy(() => import("./pages/community"));
 
 // Lazy Loaded Trash/Misc Components
 const PaymentSuccess = lazy(() => import("./trash/paySuccess"));
@@ -273,6 +274,12 @@ function App() {
             <NavbarandAside />
             <ChallengePage />
             <DashboardFooter />
+          </ProtectedRoute>
+        } />
+
+         <Route path="/community" element={
+          <ProtectedRoute>
+            <ComminutyHub />
           </ProtectedRoute>
         } />
 

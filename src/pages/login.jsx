@@ -33,7 +33,7 @@ export default function Login() {
             setLoading(true);
 
             const res = await axios.post(
-                "https://challengehub-backend.onrender.com/api/auth/login",
+                "http://localhost:3000/api/auth/login",
                 {
                     email: form.email,
                     password: form.password,

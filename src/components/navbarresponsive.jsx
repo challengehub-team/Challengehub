@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
 import {
   FaHome,
   FaUser,
@@ -10,6 +11,7 @@ import {
   FaBolt,
   FaCog,
   FaWallet,
+  FaUsers
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Added useNavigate for safe manual route redirecting
 import LogoutIcon from "./logoutIcons";
@@ -25,15 +27,33 @@ export default function NavbarandAside() {
     { name: "Challenge", path: "/challenge", icon: <FaBolt /> },
 /*     { name: "Payments", path: "/pay", icon: <FaWallet /> }, */
     { name: "Leaderboard", path: "/leaderboard", icon: <FaTrophy /> },
+    {  name: "Community",  path: "/community", icon: <FaUsers /> },
     { name: "Settings", path: "/settings", icon: <FaCog /> },
     { name: "Logout", path: "/", icon: <LogoutIcon />, isLogout: true }, // Added flag identifier to decouple logout clicks
   ];
 
   // CENTRAL LOGOUT CONTROLLER FUNCTION ACTION
-  const handleLogoutAction = () => {
-    localStorage.clear(); // 👈 Wipes out all session context keys (Token, Email, Name) completely
+  const handleLogoutAction = async () => {
+       try {
+    const userId = localStorage.getItem("userId");
+      await axios.post(
+        "http://localhost:3000/api/auth/signout",
+        { "uid": userId}, // body (empty if you don’t need to send anything)
+      /*   {
+          withCredentials: true, // important if using cookies/session
+        } */
+      );
+
+     localStorage.clear(); // 👈 Wipes out all session context keys (Token, Email, Name) completely
+        
     setOpen(false); // Closes the mobile layout sidebar drawer if it was active
-    navigate("/"); // Redirects viewport straight back to home authorization splash page root
+    
+      // Redirect to home page
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+
   };
 
   const isActive = (path) => location.pathname === path;
