@@ -23,7 +23,7 @@ import {
 // CONFIG
 // =========================================================
 
-const BACKEND_BASE_URL = "http://localhost:3000";
+const BACKEND_BASE_URL = "https://challengehub-backend-o6ok.onrender.com";
 
 const LIVE_ENDPOINTS = [
   `${BACKEND_BASE_URL}/api/live-traffic-counter`,

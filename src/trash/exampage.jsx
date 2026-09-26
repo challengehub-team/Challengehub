@@ -23,7 +23,7 @@ import { useLocation, useNavigate } from "react-router-dom";
    CONFIGURATION
 ========================================================= */
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://challengehub-backend-o6ok.onrender.com";
 
 const EXAM_STATUS_URL = `${API_BASE_URL}/api/exam/status`;
 const EXAM_SUBMIT_URL = `${API_BASE_URL}/api/exam/submit`;

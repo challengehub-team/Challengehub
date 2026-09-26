@@ -4,7 +4,7 @@ import axios from "axios";
 import { FaTrophy, FaCrown, FaMedal } from "react-icons/fa";
 import { FiUsers, FiLoader } from "react-icons/fi";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://challengehub-backend-o6ok.onrender.com";
 
 const LEADERBOARD_URL = `${API_BASE_URL}/api/exam/leaderboard`;
 const PROFILE_URL = `${API_BASE_URL}/api/profile`;

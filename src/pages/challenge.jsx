@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-const BACKEND_BASE_URL = "http://localhost:3000";
+const BACKEND_BASE_URL = "https://challengehub-backend-o6ok.onrender.com";
 
 const ChallengePage = () => {
   const navigate = useNavigate();

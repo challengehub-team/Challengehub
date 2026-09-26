@@ -30,7 +30,7 @@ export default function ProfilePage() {
     try {
       const token = await getToken();
 
-      const res = await fetch("http://localhost:3000/api/profile", {
+      const res = await fetch("https://challengehub-backend-o6ok.onrender.com/api/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

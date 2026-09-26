@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const SOCKET_URL = "http://localhost:3000";
+const SOCKET_URL = "https://challengehub-backend-o6ok.onrender.com";
 
 const CommunityHub = () => {
   const socketRef = useRef(null);
